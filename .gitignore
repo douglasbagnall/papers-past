@@ -1,0 +1,11 @@
+/zips/
+/json/
+/junk/
+/broken_json/
+/json-small/
+/articles/
+*~
+*.pyc
+*.[oadi]
+*.so
+.emacs*
