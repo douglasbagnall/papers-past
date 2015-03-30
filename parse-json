@@ -1,22 +1,158 @@
 #!/usr/bin/python
-
+# -*- coding: utf-8 -*-
 import os, sys
 import json
+import unicodedata
+from hashlib import sha1
+from collections import Counter, namedtuple
+import re
+
+ARTICLE_DIR = os.path.join(os.path.dirname(__file__), 'articles')
 
 EXPECTED_ISSUE_KEYS = [u'Issue Title', u'IssueCode', u'IssueUrl', u'Pages', u'SubTitle']
+EXPECTED_PAGE_KEYS = [u'Articles', u'Page', u'PageUrl']
+EXPECTED_ARTICLE_KEYS = ([u'FullText', u'Section', u'Title', u'Type'],
+                         [u'FullText', u'Title', u'Type'])
 
-def check_json(issue):
+ACCEPT_CHARS = set(u'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                   '0123456789!"$%&()*,-./:;?\n \'')
+
+MAP_CHARS = {
+    '—': '-',
+    'б': '6',
+    'а': 'a',
+    'ƒ': 'f',
+    '\t': ' ',
+    #'ß':  'B',
+    'μ':  'u',
+    '£': '£',
+
+}
+MAP_CHARS = {k.decode('utf8'):v.decode('utf8') for k, v in MAP_CHARS.items()}
+MAP_CHARS.update({x:x for x in ACCEPT_CHARS})
+
+def normalise_text(raw_text):
+    m = MAP_CHARS
+    noise = '°'.decode('utf-8')
+    nfd_text = unicodedata.normalize('NFD', raw_text)
+    text = u''.join(m.get(x, noise) for x in nfd_text)
+    return '␂%s␃' % text.encode('utf-8')
+
+def sanitise_header_text(raw_text):
+    ws_free = re.sub(r'\s+', ' ', raw_text)
+    return ws_free.encode('utf-8')
+
+class Article(object):
+    __slots__ = ('raw_text', 'page_url', 'title', '_type',
+                 'issue_title', 'issue_code', 'sha1')
+
+    def __init__(self, text, title, _type, page_url,
+                 issue_title, issue_code):
+        self.raw_text = text
+        self.title = sanitise_header_text(title)
+        self._type = sanitise_header_text(_type)
+        self.page_url = sanitise_header_text(page_url)
+        self.issue_title = sanitise_header_text(issue_title)
+        self.issue_code = sanitise_header_text(issue_code)
+        self.sha1 = sha1(text.encode('utf-8')).hexdigest()
+
+    def header(self):
+        return "\n".join(("title: %s" % self.title,
+                          "url: %s" % self.page_url,
+                          "issue-title: %s" % self.issue_title,
+                          "issue-code: %s" % self.issue_code,
+                          "type: %s" % self._type,
+                          "id: %s" % self.sha1,
+                          "\n"))
+
+    def content(self):
+        return normalise_text(self.raw_text)
+
+
+def check_article(article):
+    keys = sorted(article.keys())
+    if keys not in EXPECTED_ARTICLE_KEYS:
+        raise ValueError("Got unexpected article keys %s", keys)
+
+def check_page(page):
+    keys = sorted(page.keys())
+    if keys != EXPECTED_PAGE_KEYS:
+        raise ValueError("Got unexpected page keys %s", keys)
+    articles = page[u'Articles']
+    for a in articles:
+        check_article(a)
+
+def check_issue(issue):
     keys = sorted(issue.keys())
     if keys != EXPECTED_ISSUE_KEYS:
-        raise ValueError("Got unexpected keys %s", keys)
+        raise ValueError("Got unexpected issue keys %s", keys)
+    pages = issue[u'Pages']
+    for p in pages:
+        check_page(p)
 
-
-def parse_json(fn):
-    print fn
+def check_json(fn):
     f = open(fn)
     issue = json.load(f)
     f.close()
-    check_json(issue)
+    check_issue(issue)
+
+def check_files(files):
+    for fn in args.files:
+        check_json(fn)
+
+
+def parse_article(raw_article, **kwargs):
+    article = Article(raw_article['FullText'],
+                      raw_article['Title'],
+                      raw_article['Type'],
+                      kwargs['page_url'],
+                      kwargs['issue_title'],
+                      kwargs['issue_code'])
+    return article
+
+def parse_page(page, **kwargs):
+    page_url = page[u'PageUrl']
+    articles = []
+    for a in page[u'Articles']:
+        articles.append(parse_article(a, page_url=page_url, **kwargs))
+    return articles
+
+def parse_json(fn):
+    f = open(fn)
+    issue = json.load(f)
+    f.close()
+    issue_title = issue[u'Issue Title']
+    issue_code = issue[u'IssueCode']
+    pages = issue[u'Pages']
+    articles = []
+    for p in pages:
+        articles.extend(parse_page(p, issue_title=issue_title,
+                                   issue_code=issue_code))
+    return articles
+
+def count_characters(files):
+    counter = Counter()
+    for fn in files:
+        for article in parse_json(fn):
+            counter.update(unicodedata.normalize('NFD', article.raw_text))
+    n = float(sum(counter.values()))
+    for k, v in counter.most_common():
+        print "%5s %6r: %11d %f" % (k, k, v, v / n)
+    print repr(u''.join(c for c,n in counter.most_common(100)))
+
+def convert_files(files):
+    for fn in files:
+        articles = parse_json(fn)
+        for article in articles:
+            s = article.sha1
+            path = os.path.join(ARTICLE_DIR, s[:3], s[3:])
+            d = os.path.dirname(path)
+            if not os.path.isdir(d):
+                os.makedirs(d)
+            f = open(path, 'w')
+            f.write(article.header())
+            f.write(article.content())
+            f.close()
 
 
 def main():
@@ -24,9 +160,18 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('files', nargs='+',
                         help='files to process')
+    parser.add_argument('--check', action='store_true',
+                        help='check rather than convert')
+    parser.add_argument('--count-characters', action='store_true',
+                        help='count characters used in th articles')
     args = parser.parse_args()
 
-    for fn in args.files:
-        parse_json(fn)
+    if args.check:
+        check_files(args.files)
+    elif args.count_characters:
+        count_characters(args.files)
+    else:
+        convert_files(args.files)
+
 
 main()
