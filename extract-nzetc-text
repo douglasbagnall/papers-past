@@ -1,0 +1,18 @@
+#!/usr/bin/python
+
+import sys
+
+try:
+    from lxml import etree as ET
+    print >> sys.stderr, "using lxml.etree"
+except ImportError:
+    print >> sys.stderr, "using xml.etree.ElementTree"
+    import xml.etree.ElementTree as ET
+
+def extract_body_text(fn):
+    tree = ET.parse(fn)
+    for p in tree.findall('.//{http://www.tei-c.org/ns/1.0}body'
+                          '//{http://www.tei-c.org/ns/1.0}p'):
+        print ET.tostring(p, method='text', encoding='utf8')
+
+extract_body_text(sys.argv[1])
