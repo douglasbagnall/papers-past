@@ -1,18 +1,61 @@
 #!/usr/bin/python
 
-import sys
+import sys, os
+from alphabet import normalise_text
+
+DEST_DIR = os.path.join(os.path.dirname(__file__), 'books')
+XMLNS = '{http://www.w3.org/XML/1998/namespace}'
+TEINS = '{http://www.tei-c.org/ns/1.0}'
+
+def ns(s):
+    return s.format(xml=XMLNS, tei=TEINS)
 
 try:
     from lxml import etree as ET
-    print >> sys.stderr, "using lxml.etree"
+    #print >> sys.stderr, "using lxml.etree"
 except ImportError:
-    print >> sys.stderr, "using xml.etree.ElementTree"
+    print >> sys.stderr, "using xml.etree.ElementTree. Install lxml for speed."
     import xml.etree.ElementTree as ET
 
-def extract_body_text(fn):
-    tree = ET.parse(fn)
-    for p in tree.findall('.//{http://www.tei-c.org/ns/1.0}body'
-                          '//{http://www.tei-c.org/ns/1.0}p'):
-        print ET.tostring(p, method='text', encoding='utf8')
 
-extract_body_text(sys.argv[1])
+def get_metadata(tree, path):
+    el = tree.find(ns(path))
+    if el is None:
+        return "<unknown>"
+    return normalise_text(ET.tostring(el, method='text', encoding='utf8'),
+                          collapse_whitespace=True)
+
+def extract_body_and_header(fn):
+    tree = ET.parse(fn)
+    doc = []
+    for p in tree.findall(ns('.//{tei}body//{tei}p')):
+        doc.append(ET.tostring(p, method='text', encoding='utf8'))
+
+    body = normalise_text('\n'.join(doc), stxetx=True)
+
+    title = get_metadata(tree, ".//{tei}name[@type='work']")
+    date = get_metadata(tree, './/{tei}sourceDesc//{tei}date[@when]')
+    author = get_metadata(tree, './/{tei}sourceDesc//{tei}author')
+
+    id = tree.getroot().attrib.get(ns('{xml}id'))
+
+    header = "title: %s\nauthor: %s\nid: %s\ndate: %s\n" % (title, author, id, date)
+    print >> sys.stderr, header
+    return header, body, id
+
+
+def write_clean_version(srcfn, destfn=None):
+    header, body, id = extract_body_and_header(srcfn)
+    if destfn is None:
+        destfn = os.path.join(DEST_DIR, id)
+    f = open(destfn, 'w')
+    print >> f, header
+    print >> f, body
+    f.close()
+
+
+def main():
+    for book in sys.argv[1:]:
+        write_clean_version(book)
+
+main()

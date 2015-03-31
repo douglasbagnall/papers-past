@@ -7,6 +7,8 @@ from hashlib import sha1
 from collections import Counter, namedtuple
 import re
 
+from alphabet import normalise_text
+
 ARTICLE_DIR = os.path.join(os.path.dirname(__file__), 'articles')
 
 EXPECTED_ISSUE_KEYS = [u'Issue Title', u'IssueCode', u'IssueUrl', u'Pages', u'SubTitle']
@@ -14,29 +16,6 @@ EXPECTED_PAGE_KEYS = [u'Articles', u'Page', u'PageUrl']
 EXPECTED_ARTICLE_KEYS = ([u'FullText', u'Section', u'Title', u'Type'],
                          [u'FullText', u'Title', u'Type'])
 
-ACCEPT_CHARS = set(u'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-                   '0123456789!"$%&()*,-./:;?\n \'')
-
-MAP_CHARS = {
-    '—': '-',
-    'б': '6',
-    'а': 'a',
-    'ƒ': 'f',
-    '\t': ' ',
-    #'ß':  'B',
-    'μ':  'u',
-    '£': '£',
-
-}
-MAP_CHARS = {k.decode('utf8'):v.decode('utf8') for k, v in MAP_CHARS.items()}
-MAP_CHARS.update({x:x for x in ACCEPT_CHARS})
-
-def normalise_text(raw_text):
-    m = MAP_CHARS
-    noise = '°'.decode('utf-8')
-    nfd_text = unicodedata.normalize('NFD', raw_text)
-    text = u''.join(m.get(x, noise) for x in nfd_text)
-    return '␂%s␃' % text.encode('utf-8')
 
 def sanitise_header_text(raw_text):
     ws_free = re.sub(r'\s+', ' ', raw_text)
@@ -66,8 +45,7 @@ class Article(object):
                           "\n"))
 
     def content(self):
-        return normalise_text(self.raw_text)
-
+        return normalise_text(self.raw_text, stxetx=True)
 
 def check_article(article):
     keys = sorted(article.keys())
