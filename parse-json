@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import os, sys
+import os
+import sys
 import json
 import unicodedata
 from hashlib import sha1
@@ -11,7 +12,8 @@ from alphabet import normalise_text
 
 ARTICLE_DIR = os.path.join(os.path.dirname(__file__), 'articles')
 
-EXPECTED_ISSUE_KEYS = [u'Issue Title', u'IssueCode', u'IssueUrl', u'Pages', u'SubTitle']
+EXPECTED_ISSUE_KEYS = [u'Issue Title', u'IssueCode', u'IssueUrl', u'Pages',
+                       u'SubTitle']
 EXPECTED_PAGE_KEYS = [u'Articles', u'Page', u'PageUrl']
 EXPECTED_ARTICLE_KEYS = ([u'FullText', u'Section', u'Title', u'Type'],
                          [u'FullText', u'Title', u'Type'])
@@ -20,6 +22,7 @@ EXPECTED_ARTICLE_KEYS = ([u'FullText', u'Section', u'Title', u'Type'],
 def sanitise_header_text(raw_text):
     ws_free = re.sub(r'\s+', ' ', raw_text)
     return ws_free.encode('utf-8')
+
 
 class Article(object):
     __slots__ = ('raw_text', 'page_url', 'title', '_type',
@@ -47,10 +50,12 @@ class Article(object):
     def content(self):
         return normalise_text(self.raw_text, stxetx=True)
 
+
 def check_article(article):
     keys = sorted(article.keys())
     if keys not in EXPECTED_ARTICLE_KEYS:
         raise ValueError("Got unexpected article keys %s", keys)
+
 
 def check_page(page):
     keys = sorted(page.keys())
@@ -60,6 +65,7 @@ def check_page(page):
     for a in articles:
         check_article(a)
 
+
 def check_issue(issue):
     keys = sorted(issue.keys())
     if keys != EXPECTED_ISSUE_KEYS:
@@ -68,11 +74,13 @@ def check_issue(issue):
     for p in pages:
         check_page(p)
 
+
 def check_json(fn):
     f = open(fn)
     issue = json.load(f)
     f.close()
     check_issue(issue)
+
 
 def check_files(files):
     for fn in args.files:
@@ -88,12 +96,14 @@ def parse_article(raw_article, **kwargs):
                       kwargs['issue_code'])
     return article
 
+
 def parse_page(page, **kwargs):
     page_url = page[u'PageUrl']
     articles = []
     for a in page[u'Articles']:
         articles.append(parse_article(a, page_url=page_url, **kwargs))
     return articles
+
 
 def parse_json(fn):
     f = open(fn)
@@ -108,6 +118,7 @@ def parse_json(fn):
                                    issue_code=issue_code))
     return articles
 
+
 def count_characters(files):
     counter = Counter()
     for fn in files:
@@ -116,7 +127,8 @@ def count_characters(files):
     n = float(sum(counter.values()))
     for k, v in counter.most_common():
         print "%5s %6r: %11d %f" % (k, k, v, v / n)
-    print repr(u''.join(c for c,n in counter.most_common(100)))
+    print repr(u''.join(c for c, n in counter.most_common(100)))
+
 
 def convert_files(files):
     for fn in files:

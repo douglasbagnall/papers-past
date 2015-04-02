@@ -1,18 +1,19 @@
 #!/usr/bin/python
 
-import sys, os
+import sys
+import os
 from alphabet import normalise_text
 
 DEST_DIR = os.path.join(os.path.dirname(__file__), 'books')
 XMLNS = '{http://www.w3.org/XML/1998/namespace}'
 TEINS = '{http://www.tei-c.org/ns/1.0}'
 
+
 def ns(s):
     return s.format(xml=XMLNS, tei=TEINS)
 
 try:
     from lxml import etree as ET
-    #print >> sys.stderr, "using lxml.etree"
 except ImportError:
     print >> sys.stderr, "using xml.etree.ElementTree. Install lxml for speed."
     import xml.etree.ElementTree as ET
@@ -24,6 +25,7 @@ def get_metadata(tree, path):
         return "<unknown>"
     return normalise_text(ET.tostring(el, method='text', encoding='utf8'),
                           collapse_whitespace=True)
+
 
 def extract_body_and_header(fn):
     tree = ET.parse(fn)
@@ -39,7 +41,8 @@ def extract_body_and_header(fn):
 
     id = tree.getroot().attrib.get(ns('{xml}id'))
 
-    header = "title: %s\nauthor: %s\nid: %s\ndate: %s\n" % (title, author, id, date)
+    header = "title: %s\nauthor: %s\nid: %s\ndate: %s\n" % (title, author,
+                                                            id, date)
     print >> sys.stderr, header
     return header, body, id
 
