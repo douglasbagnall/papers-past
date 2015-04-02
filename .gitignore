@@ -9,3 +9,5 @@
 *.[oadi]
 *.so
 .emacs*
+/corpus/
+/books/
