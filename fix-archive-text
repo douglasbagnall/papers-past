@@ -1,0 +1,76 @@
+#!/usr/bin/python
+
+import sys
+import os
+from alphabet import normalise_text
+import re
+
+KEYS = ("title", "author", "date", "id")
+DEST_DIR = os.path.join(os.path.dirname(__file__), 'books')
+
+
+def fix_body(f):
+    out = []
+    prev = None
+    no_lc = re.compile(r'^[^a-z]+$')
+    for line in f:
+        line = line.rstrip()
+        if not prev and not line:
+            continue
+        prev = line
+        if no_lc.match(line):
+            print 'skipping line "%s"' % line
+            continue
+        out.append(line)
+
+    text = '\n'.join(out)
+    return normalise_text(text, stxetx=True, collapse_whitespace=False)
+
+
+def read_header(f):
+    headers = {}
+    for line in f:
+        line = line.strip()
+        if not line:
+            break
+        k, v = line.split(':', 1)
+        k = k.lower().replace('\xef\xbb\xbf', '')
+        if k not in KEYS:
+            raise ValueError("'%s' is not a valid header" % k)
+        headers[k] = v.strip()
+
+    return headers
+
+
+def write_fixed_book(srcfn, destfn=None):
+    print >> sys.stderr, "starting %s" % srcfn
+    f = open(srcfn)
+    headers = read_header(f)
+    if 'id' not in headers:
+        id_ = os.path.basename(srcfn)
+        id_ = re.sub(r'(_djvu)?\.txt$', '', id_)
+        id_ = re.sub(r'[^\w-]', '', id_)
+        print >> sys.stderr, ("missing id in %s\n using '%s'" %
+                              (srcfn, id_))
+        headers['id'] = id_
+    else:
+        id_ = headers['id']
+    headers.setdefault('date', '<unknown>')
+
+    header = ''.join("%s: %s\n" % (k, headers[k]) for k in KEYS)
+    body = fix_body(f)
+    f.close()
+
+    if destfn is None:
+        destfn = os.path.join(DEST_DIR, id_)
+    f = open(destfn, 'w')
+    print >> f, header
+    print >> f, body
+    f.close()
+
+
+def main():
+    for book in sys.argv[1:]:
+        write_fixed_book(book)
+
+main()
