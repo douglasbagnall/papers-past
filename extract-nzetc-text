@@ -30,6 +30,9 @@ def get_metadata(tree, path):
 def extract_body_and_header(fn):
     tree = ET.parse(fn)
     doc = []
+    for table in tree.findall(ns('.//{tei}body//{tei}p//{tei}table')):
+        table.clear()
+
     for p in tree.findall(ns('.//{tei}body//{tei}p')):
         doc.append(ET.tostring(p, method='text', encoding='utf8'))
 
