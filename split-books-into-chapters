@@ -32,6 +32,8 @@ def split_book(fn, target_size):
             chapters.append('\n'.join(chapter))
             n_chapters = max(1, remaining // target_size)
             remaining = end - here
+            if not remaining:
+                break
             size = remaining // n_chapters
             next_stop = here + size
             chapter = []
