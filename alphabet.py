@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import unicodedata
 
+STX = '␂'
+ETX = '␃'
+
 
 def _make_char_map():
     chars = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -45,3 +48,28 @@ def normalise_text(raw_text, stxetx=False, collapse_whitespace=False):
     if stxetx:
         return '␂%s␃' % text
     return text
+
+
+BOOK_HEADERS = set(("title", "author", "date", "id", "type"))
+
+ARTICLE_HEADERS = set(("title", "url", "issue-title", "issue-code",
+                       "type", "id"))
+
+ALL_HEADERS = BOOK_HEADERS | ARTICLE_HEADERS
+
+
+def read_header(f, keys=ALL_HEADERS):
+    headers = {}
+    n_bytes = 0
+    for line in f:
+        n_bytes += len(line)
+        line = line.strip()
+        if not line:
+            break
+        k, v = line.split(':', 1)
+        k = k.lower().replace('\xef\xbb\xbf', '')
+        if k not in keys:
+            raise ValueError("'%s' is not a valid header" % k)
+        headers[k] = v.strip()
+
+    return headers, n_bytes

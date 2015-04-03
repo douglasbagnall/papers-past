@@ -2,10 +2,9 @@
 
 import sys
 import os
-from alphabet import normalise_text
+from alphabet import normalise_text, read_header, BOOK_HEADERS
 import re
 
-KEYS = ("title", "author", "date", "id")
 DEST_DIR = os.path.join(os.path.dirname(__file__), 'books')
 
 
@@ -27,25 +26,10 @@ def fix_body(f):
     return normalise_text(text, stxetx=True, collapse_whitespace=False)
 
 
-def read_header(f):
-    headers = {}
-    for line in f:
-        line = line.strip()
-        if not line:
-            break
-        k, v = line.split(':', 1)
-        k = k.lower().replace('\xef\xbb\xbf', '')
-        if k not in KEYS:
-            raise ValueError("'%s' is not a valid header" % k)
-        headers[k] = v.strip()
-
-    return headers
-
-
 def write_fixed_book(srcfn, destfn=None):
     print >> sys.stderr, "starting %s" % srcfn
     f = open(srcfn)
-    headers = read_header(f)
+    headers, hlen = read_header(f)
     if 'id' not in headers:
         id_ = os.path.basename(srcfn)
         id_ = re.sub(r'(_djvu)?\.txt$', '', id_)
@@ -56,8 +40,9 @@ def write_fixed_book(srcfn, destfn=None):
     else:
         id_ = headers['id']
     headers.setdefault('date', '<unknown>')
+    headers.setdefault('type', 'book')
 
-    header = ''.join("%s: %s\n" % (k, headers[k]) for k in KEYS)
+    header = ''.join("%s: %s\n" % (k, headers[k]) for k in BOOK_HEADERS)
     body = fix_body(f)
     f.close()
 
