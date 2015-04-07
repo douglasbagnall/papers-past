@@ -59,6 +59,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--chapter-dir',
                         help="find training text here")
+    parser.add_argument('-n', '--basename',
+                        help="base filenames upon this")
     parser.add_argument('-M', '--min-chapters-per-class', type=int, metavar='<n>',
                         help="ignore classes with fewer than this many examples")
     parser.add_argument('--print-book-list', action='store_true',
@@ -126,20 +128,24 @@ def main():
                   verbose=args.verbose, learn_rate=args.learn_rate,
                   temporal_pgm_dump=args.temporal_pgm_dump,
                   periodic_pgm_dump=args.periodic_pgm_dump,
-                  periodic_pgm_period=args.periodic_pgm_period)
+                  periodic_pgm_period=args.periodic_pgm_period,
+                  basename=args.basename)
 
     net.batch_size = args.batch_size
 
     books = encode_books(alphabet, raw_books)
 
     for i in range(args.sub_epochs):
-        print "doing sub-epoch with learn-rate %s" % net.learn_rate
+        print "doing sub-epoch %d with learn-rate %s, leakage %s" % (i,
+                                                                     net.learn_rate,
+                                                                     leakage)
         for book_id, chapters in books.items():
             if args.verbose and False:
                 net.dump_parameters()
             cid, c = chapters.next()
             net.train(c, book_id, leakage=leakage)
-            #print "trained on %s (class %s)" % (cid, book_id)
+
+        net.save()
         leakage *= args.leakage_decay
         net.learn_rate *= args.learn_rate_decay
 
