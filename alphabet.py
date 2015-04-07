@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import unicodedata
+import re
 
 STX = '␂'
 ETX = '␃'
@@ -34,8 +35,7 @@ def _make_char_map():
 CHAR_MAP = _make_char_map()
 NOISE_CHAR = '°'.decode('utf-8')
 
-
-def normalise_text(raw_text, stxetx=False, collapse_whitespace=False):
+def normalise_text(raw_text, stxetx=False, collapse_whitespace=0):
     m = CHAR_MAP.get
     noise = NOISE_CHAR
     if not isinstance(raw_text, unicode):
@@ -43,8 +43,10 @@ def normalise_text(raw_text, stxetx=False, collapse_whitespace=False):
     nfd_text = unicodedata.normalize('NFD', raw_text)
     utext = u''.join(m(x, noise) for x in nfd_text)
     text = utext.encode('utf-8').strip()
-    if collapse_whitespace:
+    if collapse_whitespace == 1:
         text = ' '.join(text.split())
+    elif collapse_whitespace == 2:
+        text = re.sub(r'  +', r'  ', text)
     if stxetx:
         return '␂%s␃' % text
     return text

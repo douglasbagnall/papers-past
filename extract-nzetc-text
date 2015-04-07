@@ -24,19 +24,22 @@ def get_metadata(tree, path):
     if el is None:
         return "<unknown>"
     return normalise_text(ET.tostring(el, method='text', encoding='utf8'),
-                          collapse_whitespace=True)
+                          collapse_whitespace=1)
 
 
 def extract_body_and_header(fn):
     tree = ET.parse(fn)
     doc = []
-    for table in tree.findall(ns('.//{tei}body//{tei}p//{tei}table')):
-        table.clear()
+    for tag in ('table', 'note'):
+        for el in tree.findall(ns('.//{tei}p//{tei}%s' % tag)):
+            el.clear()
 
     for p in tree.findall(ns('.//{tei}body//{tei}p')):
-        doc.append(ET.tostring(p, method='text', encoding='utf8'))
+        para = ET.tostring(p, method='text', encoding='utf8').strip()
+        doc.append(normalise_text(para, collapse_whitespace=1))
 
-    body = normalise_text('\n'.join(doc), stxetx=True)
+    body = normalise_text('\n\n'.join(doc), stxetx=True,
+                          collapse_whitespace=2)
 
     title = get_metadata(tree, ".//{tei}name[@type='work']")
     date = get_metadata(tree, './/{tei}sourceDesc//{tei}date[@when]')

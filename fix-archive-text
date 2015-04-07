@@ -23,7 +23,8 @@ def fix_body(f):
         out.append(line)
 
     text = '\n'.join(out)
-    return normalise_text(text, stxetx=True, collapse_whitespace=False)
+    return normalise_text(text, stxetx=True,
+                          collapse_whitespace=2)
 
 
 def write_fixed_book(srcfn, destfn=None):

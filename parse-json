@@ -48,7 +48,8 @@ class Article(object):
                           "\n"))
 
     def content(self):
-        return normalise_text(self.raw_text, stxetx=True)
+        return normalise_text(self.raw_text, stxetx=True,
+                              collapse_whitespace=2)
 
 
 def check_article(article):
