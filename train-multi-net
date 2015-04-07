@@ -1,0 +1,139 @@
+#!/usr/bin/python
+import argparse
+import os
+import sys
+from alphabet import read_header
+import charmodel
+import random
+import itertools
+
+def get_alphabet(books):
+    texts = []
+    for d in books.values():
+        texts.extend(d.values())
+    text = ''.join(texts)
+    a = charmodel.Alphabet(text, ignore_case=False, threshold=3e-6)
+    print a.alphabet
+    print a.collapsed_chars
+    return a
+
+def get_net(alphabet, classnames, **kwargs):
+    return charmodel.Net(alphabet, classnames, **kwargs)
+
+
+def read_body(f):
+    return ''.join(line for line in f)
+
+
+def encode_books(alphabet, raw_books):
+    books = {}
+    for book, raw_chapters in raw_books.items():
+        items = raw_chapters.items()
+        random.shuffle(items)
+        books[book] = itertools.cycle((k, alphabet.encode_text(v))
+                                      for k, v in items)
+    return books
+
+def load_texts(dir, min_per_class):
+    books = {}
+    for fn in os.listdir(dir):
+        ffn = os.path.join(dir, fn)
+        f = open(ffn)
+        header, n_bytes = read_header(f)
+        text = read_body(f)
+        f.close()
+        chapter_id = header['id']
+        try:
+            book_id = chapter_id[:chapter_id.rindex('-')]
+        except ValueError:
+            book_id = chapter_id
+        book_chapters = books.setdefault(book_id, {})
+        book_chapters[chapter_id] = text
+
+    if min_per_class is None:
+        return books
+    return {k: v for k, v in books.items()
+            if len(v) > min_per_class}
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--chapter-dir',
+                        help="find training text here")
+    parser.add_argument('-M', '--min-chapters-per-class', type=int, metavar='<n>',
+                        help="ignore classes with fewer than this many examples")
+    parser.add_argument('--print-book-list', action='store_true',
+                        help="print the list of classes found")
+    parser.add_argument('-H', '--hidden-size', type=int, default=199, metavar='<nodes>',
+                        help="number of hidden nodes")
+    parser.add_argument('-r', '--rng-seed', type=int, default=-1,
+                        help="rng seed (-1 for auto)")
+    parser.add_argument('-e', '--sub-epochs', type=int, default=1,
+                        help="how many cycles through the books to do")
+    parser.add_argument('--batch-size', type=int, default=20, metavar='<int>',
+                        help="mini-batch size")
+    parser.add_argument('--presynaptic-noise', type=float, default=0, metavar='<float>',
+                        help="Add this much presynaptic noise")
+    parser.add_argument('-l', '--learn-rate', type=float, default=1e-3,
+                        help=charmodel.Net.learn_rate.__doc__)
+    parser.add_argument('-L', '--leakage', type=float, default=-1,
+                        help=("how much training leaks into other classes "
+                              "[0-1] or negative"))
+    parser.add_argument('--leakage-decay', type=float, default=1,
+                        help="change in leakage per sub-epoch")
+    parser.add_argument('--learn-rate-decay', type=float, default=1,
+                        help="change in learn-rate per sub-epoch")
+    parser.add_argument('-m', '--momentum', type=float, default=0.95, metavar='<0-1>',
+                        help=charmodel.Net.momentum.__doc__)
+    parser.add_argument('--momentum-weight', type=float, default=0.5, metavar='<0-1>',
+                        help=charmodel.Net.momentum_weight.__doc__)
+    parser.add_argument('--log-file', default=None,
+                        help="log to this file")
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help="print more to stderr")
+    parser.add_argument('--enable-fp-exceptions', action='store_true',
+                        help="crash on bad floating point errors")
+    parser.add_argument('--temporal-pgm-dump', action='store_true',
+                        help=("save images showing changing state "
+                              "of input/error vectors"))
+
+    args = parser.parse_args()
+
+    if args.enable_fp_exceptions:
+        charmodel.enable_fp_exceptions()
+
+    if args.rng_seed != -1:
+        random.seed(args.rng_seed)
+
+    raw_books = load_texts(args.chapter_dir, args.min_chapters_per_class)
+    booknames = sorted(raw_books.keys())
+
+    if args.print_book_list:
+        for k, v in text_sets.items():
+            print "%25s %s" %(k, len(v))
+
+    print args.log_file
+
+    leakage = args.leakage
+
+    alphabet = get_alphabet(raw_books)
+    net = get_net(alphabet, booknames, hidden_size=args.hidden_size,
+                  rng_seed=args.rng_seed, log_file=args.log_file,
+                  verbose=args.verbose, learn_rate=args.learn_rate,
+                  temporal_pgm_dump=args.temporal_pgm_dump)
+
+    net.batch_size = args.batch_size
+
+    books = encode_books(alphabet, raw_books)
+
+    for i in range(args.sub_epochs):
+        print "doing sub-epoch with learn-rate %s" % net.learn_rate
+        for book_id, chapters in books.items():
+            if args.verbose and False:
+                net.dump_parameters()
+            cid, c = chapters.next()
+            net.train(c, book_id, leakage=leakage)
+            #print "trained on %s (class %s)" % (cid, book_id)
+        leakage *= args.leakage_decay
+        net.learn_rate *= args.learn_rate_decay
+
+main()
