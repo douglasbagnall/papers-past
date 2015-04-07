@@ -95,6 +95,11 @@ def main():
     parser.add_argument('--temporal-pgm-dump', action='store_true',
                         help=("save images showing changing state "
                               "of input/error vectors"))
+    parser.add_argument('--periodic-pgm-dump', metavar='"({ih,ho,bi}[wmdt] )*"',
+                        help=("Periodically dump images of weights;"
+                              "string determines which"))
+    parser.add_argument('--periodic-pgm-period', type=int, default=1000,
+                        help=("periodicity of periodic-pgm-dump"))
 
     args = parser.parse_args()
 
@@ -119,7 +124,9 @@ def main():
     net = get_net(alphabet, booknames, hidden_size=args.hidden_size,
                   rng_seed=args.rng_seed, log_file=args.log_file,
                   verbose=args.verbose, learn_rate=args.learn_rate,
-                  temporal_pgm_dump=args.temporal_pgm_dump)
+                  temporal_pgm_dump=args.temporal_pgm_dump,
+                  periodic_pgm_dump=args.periodic_pgm_dump,
+                  periodic_pgm_period=args.periodic_pgm_period)
 
     net.batch_size = args.batch_size
 
