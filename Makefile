@@ -1,3 +1,5 @@
+all:: books
+
 .PRECIOUS: books books/chapters
 
 books/chapters: books
@@ -30,3 +32,9 @@ recur/charmodel.so: recur/local.mak
 
 charmodel.so: recur/charmodel.so
 	ln -s $^ $@
+
+pgm-clean:
+	rm -r images
+	mkdir images
+
+.PHONY: all pgm-clean
