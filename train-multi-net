@@ -6,6 +6,7 @@ from alphabet import read_header
 import charmodel
 import random
 import itertools
+import json
 
 def get_alphabet(books):
     texts = []
@@ -123,13 +124,24 @@ def main():
     leakage = args.leakage
 
     alphabet = get_alphabet(raw_books)
+
+    metadata = json.dumps({
+        'alphabet': alphabet.alphabet,
+        'collapse_chars': alphabet.collapsed_chars,
+        'version': 1,
+        'classnames': booknames,
+        'case_insensitive': False,
+        'utf8': True,
+        'collapse_space': False,
+    }, sort_keys=True)
+
     net = get_net(alphabet, booknames, hidden_size=args.hidden_size,
                   rng_seed=args.rng_seed, log_file=args.log_file,
                   verbose=args.verbose, learn_rate=args.learn_rate,
                   temporal_pgm_dump=args.temporal_pgm_dump,
                   periodic_pgm_dump=args.periodic_pgm_dump,
                   periodic_pgm_period=args.periodic_pgm_period,
-                  basename=args.basename)
+                  basename=args.basename, metadata=metadata)
 
     net.batch_size = args.batch_size
 
