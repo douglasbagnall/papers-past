@@ -5,7 +5,7 @@ import os
 from alphabet import normalise_text, read_header, BOOK_HEADERS
 import re
 
-DEST_DIR = os.path.join(os.path.dirname(__file__), 'books')
+DEST_DIR = os.path.join(os.path.dirname(__file__), 'books/all')
 
 
 def fix_body(f):

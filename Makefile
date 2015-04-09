@@ -1,12 +1,17 @@
-all:: books
+all:: books/chapters
 
-.PRECIOUS: books books/chapters
+.SECONDARY: books/chapters books/all books/merged
 
-books/chapters: books
+books/chapters: books/merged
 	mkdir -p $@
 	./split-books-into-chapters $^/*
 
-books:
+
+books/merged: books/all
+	mkdir -p $@
+	./merge-books mergers $^ $@
+
+books/all:
 	mkdir -p $@
 	./extract-nzetc-text corpus/nzetc/*.xml
 	./fix-archive-text corpus/archive/*.txt

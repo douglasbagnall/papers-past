@@ -4,7 +4,7 @@ import sys
 import os
 from alphabet import normalise_text
 
-DEST_DIR = os.path.join(os.path.dirname(__file__), 'books')
+DEST_DIR = os.path.join(os.path.dirname(__file__), 'books/all')
 XMLNS = '{http://www.w3.org/XML/1998/namespace}'
 TEINS = '{http://www.tei-c.org/ns/1.0}'
 

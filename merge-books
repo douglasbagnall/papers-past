@@ -1,0 +1,61 @@
+#!/usr/bin/python
+import sys
+import os
+import shutil
+from alphabet import read_header, BOOK_HEADERS, STX, ETX
+
+def read_merge_file(fn):
+    f = open(fn)
+    combined_books = {}
+    current_book = None
+    for line in f:
+        line = line.strip()
+        if not line:
+            current_book = None
+            continue
+        words = line.split()
+        if current_book is None:
+            current_book = words.pop(0)
+            if current_book[-1] != ':':
+                raise ValueError("expecting a book title followed by in ':', "
+                                 " got %r" % current_book)
+            current_book = current_book[:-1]
+        combined_books.setdefault(current_book, []).extend(words)
+    f.close()
+    return combined_books
+
+def merge_and_copy_books(fn, srcdir, destdir):
+    merged_files = set()
+    for book, components in read_merge_file(fn).items():
+        merged_files.update(components)
+        text = ['\n']
+        headers = {}
+        for c in components:
+            cfn = os.path.join(srcdir, c)
+            f = open(cfn)
+            c_headers, clen = read_header(f)
+            for k, v in c_headers.items():
+                headers.setdefault(k, []).append(v)
+            text.extend(line for line in f)
+            text.append('\n')
+            f.close()
+        destfn = os.path.join(destdir, book)
+        f = open(destfn, 'w')
+        print >> f, "id: %s" % book
+        for k in BOOK_HEADERS:
+            if k in headers and k != 'id':
+                print >> f, "%s: %s" % (k, ', '.join(headers[k]))
+        print >> f, ''.join(text)
+
+    for fn in os.listdir(srcdir):
+        sfn = os.path.join(srcdir, fn)
+        if fn not in merged_files and os.path.isfile(sfn):
+            dfn = os.path.join(destdir, fn)
+            #os.link(sfn, dfn)
+            shutil.copy(sfn, dfn)
+
+def main():
+    mergefile, srcdir, destdir = sys.argv[1:]
+    merge_and_copy_books(mergefile, srcdir, destdir)
+
+main()
