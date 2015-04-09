@@ -23,7 +23,7 @@ def fix_body(f):
         out.append(line)
 
     text = '\n'.join(out)
-    return normalise_text(text, stxetx=True,
+    return normalise_text(text, collapse_digits=True,
                           collapse_whitespace=2)
 
 

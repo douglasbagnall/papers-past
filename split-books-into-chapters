@@ -6,7 +6,7 @@ from alphabet import read_header, BOOK_HEADERS, STX, ETX
 DEST_DIR = os.path.join(os.path.dirname(__file__), 'books/chapters')
 
 
-def split_book(fn, target_size):
+def split_book(fn, target_size, stxetx=False):
     f = open(fn)
     headers, here = read_header(f)
     end = os.fstat(f.fileno()).st_size
@@ -28,7 +28,8 @@ def split_book(fn, target_size):
                 print >>sys.stderr, ("missed line break %d in %s at %s"
                                      " wanted %s" %
                                      (len(chapters), fn, here, next_stop))
-            chapter.append(ETX)
+            if stxetx:
+                chapter.append(ETX)
             chapters.append('\n'.join(chapter))
             n_chapters = max(1, remaining // target_size)
             remaining = end - here
@@ -37,7 +38,7 @@ def split_book(fn, target_size):
             size = remaining // n_chapters
             next_stop = here + size
             chapter = []
-        elif chapter == []:
+        elif chapter == [] and stxetx:
             chapter.append(STX + line)
         else:
             chapter.append(line)

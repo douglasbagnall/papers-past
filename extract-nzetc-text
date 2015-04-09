@@ -38,7 +38,7 @@ def extract_body_and_header(fn):
         para = ET.tostring(p, method='text', encoding='utf8').strip()
         doc.append(normalise_text(para, collapse_whitespace=1))
 
-    body = normalise_text('\n\n'.join(doc), stxetx=True,
+    body = normalise_text('\n\n'.join(doc), collapse_digits=True,
                           collapse_whitespace=2)
 
     title = get_metadata(tree, ".//{tei}name[@type='work']")

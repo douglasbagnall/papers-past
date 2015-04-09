@@ -48,7 +48,7 @@ class Article(object):
                           "\n"))
 
     def content(self):
-        return normalise_text(self.raw_text, stxetx=True,
+        return normalise_text(self.raw_text, collapse_digits=True,
                               collapse_whitespace=2)
 
 
