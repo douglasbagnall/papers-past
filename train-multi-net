@@ -8,15 +8,19 @@ import random
 import itertools
 import json
 
-def get_alphabet(books):
+
+def get_alphabet(books, ignore_case=False, collapse_space=False):
     texts = []
     for d in books.values():
         texts.extend(d.values())
     text = ''.join(texts)
-    a = charmodel.Alphabet(text, ignore_case=False, threshold=3e-6)
+    a = charmodel.Alphabet(text, ignore_case=ignore_case,
+                           collapse_space=collapse_space,
+                           threshold=3e-6)
     print a.alphabet
     print a.collapsed_chars
     return a
+
 
 def get_net(alphabet, classnames, **kwargs):
     return charmodel.Net(alphabet, classnames, **kwargs)
@@ -103,6 +107,10 @@ def main():
                               "string determines which"))
     parser.add_argument('--periodic-pgm-period', type=int, default=1000,
                         help=("periodicity of periodic-pgm-dump"))
+    parser.add_argument('--collapse-space', action='store_true',
+                        help="treat all runs of whitespace as a single space")
+    parser.add_argument('--ignore-case', action='store_true',
+                        help="treat capitals as lowercase")
 
     args = parser.parse_args()
 
@@ -123,16 +131,16 @@ def main():
 
     leakage = args.leakage
 
-    alphabet = get_alphabet(raw_books)
+    alphabet = get_alphabet(raw_books, args.ignore_case, args.collapse_space)
 
     metadata = json.dumps({
         'alphabet': alphabet.alphabet,
         'collapse_chars': alphabet.collapsed_chars,
         'version': 1,
         'classnames': booknames,
-        'case_insensitive': False,
+        'case_insensitive': args.ignore_case,
         'utf8': True,
-        'collapse_space': False,
+        'collapse_space': args.collapse_space,
     }, sort_keys=True)
 
     net = get_net(alphabet, booknames, hidden_size=args.hidden_size,
