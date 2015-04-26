@@ -107,6 +107,12 @@ def main():
                               "string determines which"))
     parser.add_argument('--periodic-pgm-period', type=int, default=1000,
                         help=("periodicity of periodic-pgm-dump"))
+    parser.add_argument('--learning-method', type=int, default=4,
+                        help=("0: weighted, 2: simplified N., "
+                              "3: classical, 4: adagrad"))
+    parser.add_argument('--activation', type=int, default=2,
+                        help=("1: ReLU, 2: ReSQRT, 3: ReLOG, 4: "
+                              "ReTANH, 5: clipped ReLU"))
     parser.add_argument('--collapse-space', action='store_true',
                         help="treat all runs of whitespace as a single space")
     parser.add_argument('--ignore-case', action='store_true',
@@ -141,15 +147,37 @@ def main():
         'case_insensitive': args.ignore_case,
         'utf8': True,
         'collapse_space': args.collapse_space,
+        'batch_size': args.batch_size,
+        'verbose': args.verbose,
+        'momentum': args.momentum,
+        'learning_method': args.learning_method,
+        'temporal_pgm_dump': args.temporal_pgm_dump,
+        'periodic_pgm_dump': args.periodic_pgm_dump,
+        'periodic_pgm_period': args.periodic_pgm_period,
+        'basename': args.basename,
     }, sort_keys=True)
 
-    net = get_net(alphabet, booknames, hidden_size=args.hidden_size,
-                  rng_seed=args.rng_seed, log_file=args.log_file,
-                  verbose=args.verbose, learn_rate=args.learn_rate,
-                  temporal_pgm_dump=args.temporal_pgm_dump,
-                  periodic_pgm_dump=args.periodic_pgm_dump,
-                  periodic_pgm_period=args.periodic_pgm_period,
-                  basename=args.basename, metadata=metadata)
+    net_kwargs = {}
+    for k, v in vars(args).items():
+        if k in ("bptt_depth",
+                "hidden_size",
+                 "rng_seed",
+                 "log_file",
+                 "verbose",
+                 "learn_rate",
+                 "temporal_pgm_dump",
+                 "periodic_pgm_dump",
+                 "periodic_pgm_period",
+                 "basename",
+                 "activation",
+                 "learning_method",
+                 "batch_size",
+                 "filename"):
+            net_kwargs[k] = v
+
+
+    net = get_net(alphabet, booknames, metadata=metadata,
+                  **net_kwargs)
 
     net.batch_size = args.batch_size
 
