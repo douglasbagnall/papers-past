@@ -11,5 +11,6 @@
 .emacs*
 /corpus/
 /books/
+/books2/
 /images/
 *.log
