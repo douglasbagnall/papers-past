@@ -130,8 +130,9 @@ def main():
     booknames = sorted(raw_books.keys())
 
     if args.print_book_list:
-        for k, v in text_sets.items():
-            print "%25s %s" %(k, len(v))
+        for k in booknames:
+            print k
+        sys.exit()
 
     print args.log_file
 
