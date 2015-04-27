@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 import argparse
 import os
 import sys
@@ -7,7 +8,7 @@ import charmodel
 import random
 import itertools
 import json
-
+import time
 
 def get_alphabet(books, ignore_case=False, collapse_space=False):
     texts = []
@@ -30,14 +31,27 @@ def read_body(f):
     return ''.join(line for line in f)
 
 
-def encode_books(alphabet, raw_books):
-    books = {}
+def encode_books(alphabet, raw_books, n_validation=1, n_reserved=0):
+    training_text = {}
+    validation_text = {}
+    reserved_text = {}
     for book, raw_chapters in raw_books.items():
         items = raw_chapters.items()
         random.shuffle(items)
-        books[book] = itertools.cycle((k, alphabet.encode_text(v))
-                                      for k, v in items)
-    return books
+        encoded = [(k, alphabet.encode_text(v)) for k, v in items]
+        validation = encoded[:n_validation]
+        reserved = encoded[n_validation: n_validation + n_reserved]
+        training = encoded[n_validation + n_reserved:]
+        if not training:
+            raise ValueError("Too many validation (%d) and reserved (%d) "
+                             "chapters; there are none left for training"
+                             % (n_validation, n_reserved))
+        training_text[book] = itertools.cycle(training)
+        validation_text[book] = itertools.cycle(validation)
+        reserved_text[book] = itertools.cycle(reserved)
+
+    return training_text, validation_text, reserved_text
+
 
 def load_texts(dir, min_per_class):
     books = {}
@@ -59,6 +73,104 @@ def load_texts(dir, min_per_class):
         return books
     return {k: v for k, v in books.items()
             if len(v) > min_per_class}
+
+
+def test_validation_texts(net, validation_texts, ignore_start):
+    results = {}
+    for name, cycle in validation_texts.items():
+        ch_name, text = cycle.next()
+        r = net.test(text, ignore_start=ignore_start)
+        mean_entropy = sum(r.values()) / len(r)
+        own_entropy = r[name]
+        results[name] = (own_entropy, mean_entropy)
+    return results
+
+
+def print_validation_results(v_entropies, prev_entropies):
+    from math import sqrt
+    mean_sum = 0.0
+    mean_sum2 = 0.0
+    own_sum = 0.0
+    own_sum2 = 0.0
+    mean_diff_sum = 0.0
+    mean_diff_sum2 = 0.0
+    own_diff_sum = 0.0
+    own_diff_sum2 = 0.0
+    gap_sum = 0.0
+    gap_sum2 = 0.0
+
+    for name, scores in v_entropies.items():
+        own_e, mean_e = scores
+        p_own, p_mean = prev_entropies[name]
+        gap = mean_e - own_e
+        diff_mean = p_mean - mean_e
+        diff_own = p_own - own_e
+
+        mean_sum += mean_e
+        own_sum += own_e
+        mean_diff_sum += diff_mean
+        own_diff_sum += diff_own
+        gap_sum += gap
+
+        mean_sum2 += mean_e * mean_e
+        own_sum2 += own_e * own_e
+        mean_diff_sum2 += diff_mean * diff_mean
+        own_diff_sum2 += diff_own * diff_own
+        gap_sum2 += gap * gap
+
+    scale = 1.0 / len(v_entropies)
+    mean_mean = mean_sum * scale
+    own_mean = own_sum * scale
+    mean_diff_mean = mean_diff_sum * scale
+    own_diff_mean = own_diff_sum * scale
+    gap_mean = gap_sum * scale
+
+    mean_dev = sqrt(mean_sum2 * scale - mean_mean * mean_mean)
+    own_dev = sqrt(own_sum2 * scale - own_mean * own_mean)
+    mean_diff_dev = sqrt(mean_diff_sum2 * scale - mean_diff_mean * mean_diff_mean)
+    own_diff_dev = sqrt(own_diff_sum2 * scale - own_diff_mean * own_diff_mean)
+    gap_dev = sqrt(gap_sum2 * scale - gap_mean * gap_mean)
+
+    print ("validation entropies mean %.3f±%.3f, "
+           "Δ %.3f±%.3f; "
+           "own %.3f±%.3f, "
+           "Δ %.3f±%.3f; "
+           "mean - own %.3f±%.3f " %
+           (mean_mean, mean_dev,
+            mean_diff_mean, mean_diff_dev,
+            own_mean, own_dev,
+            own_diff_mean, own_diff_dev,
+            gap_mean, gap_dev))
+
+
+
+def train(net, training_texts, validation_texts, leakage, sub_epochs,
+          leakage_decay, learn_rate_decay, ignore_start):
+
+    prev_validation_entropies = test_validation_texts(net, validation_texts,
+                                                      ignore_start)
+
+    for i in range(sub_epochs):
+        print ("doing sub-epoch %d with learn-rate %s, "
+               "leakage %s" % (i, net.learn_rate, leakage))
+        t_start = time.time()
+        for name, cycle in training_texts.items():
+            ch_name, text = cycle.next()
+            net.train(text, name, leakage=leakage,
+                      ignore_start=ignore_start)
+        t_end = time.time()
+        validation_entropies = test_validation_texts(net, validation_texts,
+                                                     ignore_start)
+        print_validation_results(validation_entropies, prev_validation_entropies)
+        prev_validation_entropies = validation_entropies
+        t_validation = time.time()
+        print "train took %.1fs, validation took %.1fs" % (t_end - t_start,
+                                                           t_validation - t_end)
+
+        net.save()
+        leakage *= leakage_decay
+        net.learn_rate *= learn_rate_decay
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -117,6 +229,8 @@ def main():
                         help="treat all runs of whitespace as a single space")
     parser.add_argument('--ignore-case', action='store_true',
                         help="treat capitals as lowercase")
+    parser.add_argument('-i', '--ignore-start', type=int, default=0,
+                        help="don't train on this many characters at start")
 
     args = parser.parse_args()
 
@@ -133,8 +247,6 @@ def main():
         for k in booknames:
             print k
         sys.exit()
-
-    print args.log_file
 
     leakage = args.leakage
 
@@ -182,20 +294,10 @@ def main():
 
     net.batch_size = args.batch_size
 
-    books = encode_books(alphabet, raw_books)
+    training_books, validation_books, _ = encode_books(alphabet, raw_books)
 
-    for i in range(args.sub_epochs):
-        print "doing sub-epoch %d with learn-rate %s, leakage %s" % (i,
-                                                                     net.learn_rate,
-                                                                     leakage)
-        for book_id, chapters in books.items():
-            if args.verbose and False:
-                net.dump_parameters()
-            cid, c = chapters.next()
-            net.train(c, book_id, leakage=leakage)
+    train(net, training_books, validation_books, args.leakage, args.sub_epochs,
+          args.leakage_decay, args.learn_rate_decay, args.ignore_start)
 
-        net.save()
-        leakage *= args.leakage_decay
-        net.learn_rate *= args.learn_rate_decay
 
 main()
