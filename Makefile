@@ -43,3 +43,8 @@ pgm-clean:
 	mkdir images
 
 .PHONY: all pgm-clean
+
+reference-corpus.md: dump-corpus-metadata books/all
+	echo '# Books used in the reference corpus' > $@
+	echo >> $@
+	./dump-corpus-metadata books/all/ >> $@

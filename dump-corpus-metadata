@@ -16,14 +16,14 @@ def get_book_metadata(fn):
     return header
 
 def print_markdown_dir(d):
-    header = ("%20s | %30s | %20s | %10s | %7s"
+    header = ("%-20s | %30s | %20s | %10s | %7s"
               % ('ID', 'Title', 'Author', 'Date', 'Length'))
     print header
     print ''.join('|' if x == '|' else '-' for x in header)
     for fn in os.listdir(d):
         ffn = os.path.join(d, fn)
         metadata = get_book_metadata(ffn)
-        print ("%(id)20s | %(title)30s | %(author)20s | %(date)10s | %(len)7s"
+        print ("%(id)-20s | %(title)30s | %(author)20s | %(date)10s | %(len)7s"
                % metadata)
 
 
