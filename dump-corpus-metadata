@@ -1,0 +1,34 @@
+#!/usr/bin/python
+
+from alphabet import read_header
+import os
+import sys
+
+def read_body(f):
+    return ''.join(line for line in f)
+
+def get_book_metadata(fn):
+    f = open(fn)
+    header, here = read_header(f)
+    end = os.fstat(f.fileno()).st_size
+    f.close()
+    header['len'] = end - here
+    return header
+
+def print_markdown_dir(d):
+    header = ("%20s | %30s | %20s | %10s | %7s"
+              % ('ID', 'Title', 'Author', 'Date', 'Length'))
+    print header
+    print ''.join('|' if x == '|' else '-' for x in header)
+    for fn in os.listdir(d):
+        ffn = os.path.join(d, fn)
+        metadata = get_book_metadata(ffn)
+        print ("%(id)20s | %(title)30s | %(author)20s | %(date)10s | %(len)7s"
+               % metadata)
+
+
+def main():
+    print_markdown_dir(sys.argv[1])
+
+
+main()
