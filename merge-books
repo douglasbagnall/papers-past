@@ -13,6 +13,8 @@ def read_merge_file(fn):
         if not line:
             current_book = None
             continue
+        if line[0] == '#':
+            continue
         words = line.split()
         if current_book is None:
             current_book = words.pop(0)

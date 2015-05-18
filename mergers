@@ -1,21 +1,32 @@
+# This file contains rules to merge books together (perhaps because
+# they are too short to stand on their own, or they belong together
+# conceptually, like the cyclopedia volumes, or both).
+#
+# Lines beginning with "#" are ignored. Each cluster of non-blank
+# lines defines a target book. The first line of the cluster ends with
+# a colon, and everything before it is the identifier for the new
+# book. The following lines list the identifiers of the contributing
+# books, which can be separated by multiple spaces or single
+# new-lines.
 
-bilingual-reo: 
-Gov1881NgaT  Gov1908Acts  Wai1863Mahi  Wai1887NgaM  Gov1909Acts Gov1907Acts  Gov1906Acts  Wai1864Mahi  Gov1905Acts  Wai1891NgaM KarTeKa Nat1908Repo 
-WhaEasy NgaTrea 
+
+bilingual-reo:
+Gov1881NgaT  Gov1908Acts  Wai1863Mahi  Wai1887NgaM  Gov1909Acts Gov1907Acts  Gov1906Acts  Wai1864Mahi  Gov1905Acts  Wai1891NgaM KarTeKa Nat1908Repo
+WhaEasy NgaTrea
 
 misc:
-pg19780 pg25033 
+pg19780 pg25033
 EdmCook OLeTabl McGSome Har11Typo HolSamo
 VUW1920War_Spik
 WH1-Tren
 
 
 verse:
-severnsomme00gurn poems1914191900bari anzacaftercollecOOwest 
-counterattackot00sassuoft warpoemsofsiegfr00sassrich 
-fairiesfusiliers00gravuoft 
+severnsomme00gurn poems1914191900bari anzacaftercollecOOwest
+counterattackot00sassuoft warpoemsofsiegfr00sassrich
+fairiesfusiliers00gravuoft
 
 stories:
 talesofwar00dunsuoft
-SnapshotsofAnzac  pg19962 
+SnapshotsofAnzac  pg19962
 echoesofwar00barruoft
