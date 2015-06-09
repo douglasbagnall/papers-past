@@ -196,7 +196,7 @@ def main():
                         help=charmodel.Net.learn_rate.__doc__)
     parser.add_argument('-L', '--leakage', type=float, default=-1,
                         help=("how much training leaks into other classes "
-                              "[0-1] or negative"))
+                              "<0-1> or negative"))
     parser.add_argument('--leakage-decay', type=float, default=1,
                         help="change in leakage per sub-epoch")
     parser.add_argument('--learn-rate-decay', type=float, default=1,
@@ -214,7 +214,7 @@ def main():
     parser.add_argument('--temporal-pgm-dump', action='store_true',
                         help=("save images showing changing state "
                               "of input/error vectors"))
-    parser.add_argument('--periodic-pgm-dump', metavar='"({ih,ho,bi}[wmdt] )*"',
+    parser.add_argument('--periodic-pgm-dump', metavar='"({ih,ho,bi}⁅wmdt⁆)*"',
                         help=("Periodically dump images of weights;"
                               "string determines which"))
     parser.add_argument('--periodic-pgm-period', type=int, default=1000,
