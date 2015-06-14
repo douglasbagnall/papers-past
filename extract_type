@@ -1,0 +1,21 @@
+#!/usr/bin/python
+from alphabet import read_header
+import os
+import sys
+
+
+def extract_type(fn):
+    f = open(fn)
+    headers, n_bytes = read_header(f)
+    f.close()
+    #return headers['type']
+    x = headers['issue-code']
+    return x[:x.index('_')]
+
+def main():
+    d = sys.argv[1]
+    for fn in os.listdir(d):
+        ffn = os.path.join(d, fn)
+        print extract_type(ffn)
+
+main()
