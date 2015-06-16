@@ -1,0 +1,26 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+from alphabet import read_header
+import os
+import sys
+import math
+
+def read_file(fn):
+    f = open(fn)
+    header, n_bytes = read_header(f)
+    text = ''.join(line for line in f)
+    f.close()
+    return header, n_bytes, text
+
+
+def extract_noise(text):
+    return str(int(-math.log((1.0 + text.count('°')) / (1.0 + len(text)))))
+
+def main():
+    d = sys.argv[1]
+    for fn in os.listdir(d):
+        ffn = os.path.join(d, fn)
+        header, n_bytes, text = read_file(ffn)
+        print extract_noise(text)
+
+main()
