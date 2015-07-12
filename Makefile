@@ -48,3 +48,17 @@ reference-corpus.md: dump-corpus-metadata books/all
 	echo '# Books used in the reference corpus' > $@
 	echo >> $@
 	./dump-corpus-metadata books/all/ >> $@
+
+articles/done:
+	mkdir -p $(@D)
+	./parse-json  json/*.json
+	touch $@
+
+low-noise/done: articles/done
+	mkdir -p $(@D)
+	for x in {0..4095}; do \
+	  d=$$(printf '%03x' $$x); \
+	  mkdir $(@D)/$$d; \
+	  grep -rL '°' $(<D)/$$d | xargs cp -lt $(@D)/$$d; \
+	done
+	touch $@

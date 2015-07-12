@@ -4,6 +4,7 @@
 /broken_json/
 /json-small/
 /articles/
+/low-noise/
 *~
 *.pyc
 *.[oadi]
