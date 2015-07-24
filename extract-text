@@ -1,0 +1,26 @@
+#!/usr/bin/python
+from alphabet import read_header
+import os
+import sys
+import argparse
+
+
+def extract_text(fn):
+    f = open(fn)
+    for line in f:
+        if not line.strip():
+            break
+    return ''.join(line for line in f)
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('directories', nargs='+',
+                        help="find text in these directories")
+    args = parser.parse_args()
+
+    for d in args.directories:
+        for fn in os.listdir(d):
+            ffn = os.path.join(d, fn)
+            print extract_text(ffn)
+
+main()
