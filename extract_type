@@ -2,20 +2,33 @@
 from alphabet import read_header
 import os
 import sys
+import argparse
 
 
-def extract_type(fn):
+def extract_type(fn, key, delimiter):
     f = open(fn)
     headers, n_bytes = read_header(f)
     f.close()
-    #return headers['type']
-    x = headers['issue-code']
+    x = headers[key]
+    if delimiter is None:
+        return x
     return x[:x.index('_')]
 
 def main():
-    d = sys.argv[1]
-    for fn in os.listdir(d):
-        ffn = os.path.join(d, fn)
-        print extract_type(ffn)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('directories', nargs='+',
+                        help="find text in these directories")
+    parser.add_argument('-k', '--key', default='type',
+                        help="use this metadata key")
+    parser.add_argument('-d', '--delimiter', default=None,
+                        help="use header only up to this char")
+
+    args = parser.parse_args()
+
+    for d in args.directories:
+        for fn in os.listdir(d):
+            ffn = os.path.join(d, fn)
+            print extract_type(ffn, key=args.key,
+                               delimiter=args.delimiter)
 
 main()
