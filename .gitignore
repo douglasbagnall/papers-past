@@ -4,6 +4,8 @@
 /broken_json/
 /json-small/
 /articles/
+/bad-articles/
+/mediocre-articles/
 /low-noise/
 *~
 *.pyc

@@ -19,6 +19,9 @@ EXPECTED_ARTICLE_KEYS = ([u'FullText', u'Section', u'Title', u'Type'],
                          [u'FullText', u'Title', u'Type'])
 
 
+def always(x):
+    return True
+
 def sanitise_header_text(raw_text):
     ws_free = re.sub(r'\s+', ' ', raw_text)
     return ws_free.encode('utf-8')
@@ -122,23 +125,27 @@ def parse_json(fn):
     return articles
 
 
-def count_characters(files):
+def count_characters(files, id_filter=always):
     counter = Counter()
     for fn in files:
         for article in parse_json(fn):
-            counter.update(unicodedata.normalize('NFD', article.raw_text))
+            if id_filter(article.issue_code):
+                counter.update(unicodedata.normalize('NFD', article.raw_text))
     n = float(sum(counter.values()))
     for k, v in counter.most_common():
         print "%5s %6r: %11d %f" % (k, k, v, v / n)
     print repr(u''.join(c for c, n in counter.most_common(100)))
 
 
-def convert_files(files, fix_soft_hyphens):
+def convert_files(files, fix_soft_hyphens, id_filter=always,
+                  dest=ARTICLE_DIR):
     for fn in files:
         articles = parse_json(fn)
         for article in articles:
+            if not id_filter(article.issue_code):
+                continue
             s = article.sha1
-            path = os.path.join(ARTICLE_DIR, s[:3], s[3:])
+            path = os.path.join(dest, s[:3], s[3:])
             d = os.path.dirname(path)
             if not os.path.isdir(d):
                 os.makedirs(d)
@@ -159,14 +166,23 @@ def main():
                         help='count characters used in the articles')
     parser.add_argument('--nuke-double-space', action='store_true',
                         help='remove double space artifacts')
+    parser.add_argument('--id-filter-re',
+                        help='restrict to ids matching this regex')
+    parser.add_argument('-d', '--dest', default=ARTICLE_DIR,
+                        help='save files here')
     args = parser.parse_args()
 
+    if args.id_filter_re is not None:
+        id_filter = re.compile(args.id_filter_re).search
+    else:
+        id_filter = always
     if args.check:
         check_files(args.files)
     elif args.count_characters:
-        count_characters(args.files)
+        count_characters(args.files,
+                         id_filter=id_filter)
     else:
-        convert_files(args.files, fix_soft_hyphens=args.nuke_double_space)
-
+        convert_files(args.files, fix_soft_hyphens=args.nuke_double_space,
+                      id_filter=id_filter, dest=args.dest)
 
 main()

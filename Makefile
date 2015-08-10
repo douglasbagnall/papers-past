@@ -49,10 +49,23 @@ reference-corpus.md: dump-corpus-metadata books/all
 	echo >> $@
 	./dump-corpus-metadata books/all/ >> $@
 
+#Estimates of good, bad, and mediocre OCR, courtesy of Emerson Vandy.
+GOOD_PAPERS = '^(?:AMBPA|AG|CL|TC|DOM|EP|FS|GRA|HNS|IT|LWM|MS|MT|NA|ODT|TS|SUNCH|TPT|WC)_'
+# it turns out there are no mediocre papers in the corpus
+MEDIOCRE_PAPERS = '^(?:ME|NEM|NZH|OAM|OSWCC|PBH|ST|WT|WAG|WDT|WH|WCT)_'
+BAD_PAPERS = '^(?:AS|NOT|BOPT|HAST|THD|HC|MEX|TDN|THS)_'
+
+
 articles/done:
 	mkdir -p $(@D)
-	./parse-json --nuke-double-space json/*.json
+	./parse-json --nuke-double-space --id-filter-re=$(GOOD_PAPERS) json/*.json
 	touch $@
+
+bad-articles/done:
+	mkdir -p $(@D)
+	./parse-json --nuke-double-space --id-filter-re=$(BAD_PAPERS) json/*.json --dest $(@D)
+	touch $@
+
 
 low-noise/done: articles/done
 	mkdir -p $(@D)
