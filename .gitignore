@@ -19,4 +19,5 @@
 *.log
 *.net
 /results/
+/noisy-results/
 /concat-corpus/
