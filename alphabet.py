@@ -41,8 +41,8 @@ def normalise_text(raw_text, stxetx=False, collapse_whitespace=0,
     noise = NOISE_CHAR
     if not isinstance(raw_text, unicode):
         raw_text = raw_text.decode('utf8')
-    nfd_text = unicodedata.normalize('NFD', raw_text)
-    utext = u''.join(m(x, noise) for x in nfd_text)
+    norm_text = unicodedata.normalize('NFKD', raw_text)
+    utext = u''.join(m(x, noise) for x in norm_text)
     text = utext.encode('utf-8').strip()
     if fix_soft_hyphens:
         # assume all double spaces are mis-processed soft-hyphens.

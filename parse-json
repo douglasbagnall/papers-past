@@ -131,7 +131,7 @@ def count_characters(files, id_filter=always):
     for fn in files:
         for article in parse_json(fn):
             if id_filter(article.issue_code):
-                counter.update(unicodedata.normalize('NFD', article.raw_text))
+                counter.update(unicodedata.normalize('NFKD', article.raw_text))
     n = float(sum(counter.values()))
     for k, v in counter.most_common():
         print "%5s %6r: %11d %f" % (k, k, v, v / n)
