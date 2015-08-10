@@ -7,6 +7,7 @@ import unicodedata
 from hashlib import sha1
 from collections import Counter, namedtuple
 import re
+import random
 
 from alphabet import normalise_text
 
@@ -155,6 +156,26 @@ def convert_files(files, fix_soft_hyphens, id_filter=always,
             f.close()
 
 
+def emit_raw_sample(files, sample_size, fix_soft_hyphens, id_filter=always):
+    """Print a random sample of the corpus to stdout
+
+    This is useful for calculating character statistics, etc"""
+    all_articles = []
+    for fn in files:
+        all_articles.extend(x.content(fix_soft_hyphens=fix_soft_hyphens)
+                            for x in parse_json(fn)
+                            if id_filter(x.issue_code))
+    random.shuffle(all_articles)
+
+    for article in all_articles:
+        u = article.decode('utf8')
+        if len(u) > sample_size:
+            u = u[:sample_size]
+        print u.encode('utf8')
+        sample_size -= len(u)
+        if sample_size <= 0:
+            break
+
 def main():
     import argparse
     parser = argparse.ArgumentParser()
@@ -170,13 +191,20 @@ def main():
                         help='restrict to ids matching this regex')
     parser.add_argument('-d', '--dest', default=ARTICLE_DIR,
                         help='save files here')
+    parser.add_argument('--raw-sample', type=int,
+                        help='print out this many characters of randomly '
+                        'selected articles.')
     args = parser.parse_args()
 
     if args.id_filter_re is not None:
         id_filter = re.compile(args.id_filter_re).search
     else:
         id_filter = always
-    if args.check:
+    if args.raw_sample:
+        emit_raw_sample(args.files, args.raw_sample,
+                        fix_soft_hyphens=args.nuke_double_space,
+                        id_filter=id_filter)
+    elif args.check:
         check_files(args.files)
     elif args.count_characters:
         count_characters(args.files,

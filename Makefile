@@ -75,3 +75,13 @@ low-noise/done: articles/done
 	  grep -rL '°' $(<D)/$$d | xargs cp -lt $(@D)/$$d; \
 	done
 	touch $@
+
+sample/raw-good.txt:
+	mkdir -p $(@D)
+	./parse-json --nuke-double-space --raw-sample=1000000 \
+	    --id-filter-re=$(GOOD_PAPERS) json/*.json > $@
+
+sample/raw-bad.txt:
+	mkdir -p $(@D)
+	./parse-json --nuke-double-space --raw-sample=1000000 \
+	    --id-filter-re=$(BAD_PAPERS) json/*.json > $@
