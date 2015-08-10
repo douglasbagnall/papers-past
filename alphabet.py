@@ -36,7 +36,7 @@ CHAR_MAP = _make_char_map()
 NOISE_CHAR = '°'.decode('utf-8')
 
 def normalise_text(raw_text, stxetx=False, collapse_whitespace=0,
-                   collapse_digits=False):
+                   collapse_digits=False, fix_soft_hyphens=False):
     m = CHAR_MAP.get
     noise = NOISE_CHAR
     if not isinstance(raw_text, unicode):
@@ -44,6 +44,9 @@ def normalise_text(raw_text, stxetx=False, collapse_whitespace=0,
     nfd_text = unicodedata.normalize('NFD', raw_text)
     utext = u''.join(m(x, noise) for x in nfd_text)
     text = utext.encode('utf-8').strip()
+    if fix_soft_hyphens:
+        # assume all double spaces are mis-processed soft-hyphens.
+        text = text.replace('  ', '')
     if collapse_whitespace == 1:
         text = ' '.join(text.split())
     elif collapse_whitespace == 2:

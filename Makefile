@@ -51,7 +51,7 @@ reference-corpus.md: dump-corpus-metadata books/all
 
 articles/done:
 	mkdir -p $(@D)
-	./parse-json  json/*.json
+	./parse-json --nuke-double-space json/*.json
 	touch $@
 
 low-noise/done: articles/done

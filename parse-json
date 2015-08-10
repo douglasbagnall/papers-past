@@ -47,9 +47,11 @@ class Article(object):
                           "id: %s" % self.sha1,
                           "\n"))
 
-    def content(self):
-        return normalise_text(self.raw_text, collapse_digits=True,
-                              collapse_whitespace=2)
+    def content(self, collapse_digits=True, collapse_whitespace=2,
+                fix_soft_hyphens=False):
+        return normalise_text(self.raw_text, collapse_digits=collapse_digits,
+                              collapse_whitespace=collapse_whitespace,
+                              fix_soft_hyphens=fix_soft_hyphens)
 
 
 def check_article(article):
@@ -131,7 +133,7 @@ def count_characters(files):
     print repr(u''.join(c for c, n in counter.most_common(100)))
 
 
-def convert_files(files):
+def convert_files(files, fix_soft_hyphens):
     for fn in files:
         articles = parse_json(fn)
         for article in articles:
@@ -142,7 +144,7 @@ def convert_files(files):
                 os.makedirs(d)
             f = open(path, 'w')
             f.write(article.header())
-            f.write(article.content())
+            f.write(article.content(fix_soft_hyphens=fix_soft_hyphens))
             f.close()
 
 
@@ -154,7 +156,9 @@ def main():
     parser.add_argument('--check', action='store_true',
                         help='check rather than convert')
     parser.add_argument('--count-characters', action='store_true',
-                        help='count characters used in th articles')
+                        help='count characters used in the articles')
+    parser.add_argument('--nuke-double-space', action='store_true',
+                        help='remove double space artifacts')
     args = parser.parse_args()
 
     if args.check:
@@ -162,7 +166,7 @@ def main():
     elif args.count_characters:
         count_characters(args.files)
     else:
-        convert_files(args.files)
+        convert_files(args.files, fix_soft_hyphens=args.nuke_double_space)
 
 
 main()
