@@ -14,7 +14,7 @@
 .emacs*
 /corpus/
 /books/
-/books2/
+/sample/
 /images/
 *.log
 *.net
