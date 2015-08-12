@@ -155,19 +155,30 @@ def convert_files(files, fix_soft_hyphens, id_filter=always,
             f.close()
 
 
-def emit_raw_sample(files, sample_size, fix_soft_hyphens, id_filter=always):
+def emit_raw_sample(files, sample_size, fix_soft_hyphens, id_filter=always,
+                    not_so_raw=False):
     """Print a random sample of the corpus to stdout
 
     This is useful for calculating character statistics, etc"""
     all_articles = []
+    threshold = 0.1 + 1e-7 * sample_size
     for fn in files:
-        all_articles.extend(x.content(fix_soft_hyphens=fix_soft_hyphens)
-                            for x in parse_json(fn)
-                            if id_filter(x.issue_code))
+        if not_so_raw:
+            all_articles.extend(x.content(fix_soft_hyphens=fix_soft_hyphens,
+                                          collapse_whitespace=0)
+                                for x in parse_json(fn)
+                                if id_filter(x.issue_code) and
+                                random.random() > threshold)
+        else:
+            all_articles.extend(x.raw_text.encode('utf8')
+                                for x in parse_json(fn)
+                                if id_filter(x.issue_code) and
+                                random.random() > threshold)
+
     random.shuffle(all_articles)
 
     for article in all_articles:
-        u = article.decode('utf8')
+        u = unicodedata.normalize('NFKD', article.decode('utf8'))
         if len(u) > sample_size:
             u = u[:sample_size]
         print u.encode('utf8')
