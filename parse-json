@@ -51,9 +51,8 @@ class Article(object):
                           "id: %s" % self.sha1,
                           "\n"))
 
-    def content(self, collapse_digits=True, collapse_whitespace=2,
-                fix_soft_hyphens=False):
-        return normalise_text(self.raw_text, collapse_digits=collapse_digits,
+    def content(self, collapse_whitespace=2, fix_soft_hyphens=False):
+        return normalise_text(self.raw_text,
                               collapse_whitespace=collapse_whitespace,
                               fix_soft_hyphens=fix_soft_hyphens)
 

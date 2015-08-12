@@ -115,13 +115,16 @@ CHAR_MAP = {
 NOISE_CHAR = u'°'
 
 def normalise_text(raw_text, collapse_whitespace=0,
-                   collapse_digits=False, fix_soft_hyphens=False):
+                   fix_soft_hyphens=False, fix_runs=3,
+                   real_caps=False):
     m = CHAR_MAP.get
     noise = NOISE_CHAR
     if not isinstance(raw_text, unicode):
         raw_text = raw_text.decode('utf8')
     norm_text = unicodedata.normalize('NFKD', raw_text)
     utext = u''.join(m(x, noise) for x in norm_text)
+    if real_caps:
+        utext = re.sub(ur'¹\w', lambda x: x.group(0)[1].upper(), utext)
     text = utext.encode('utf-8').strip()
     if fix_soft_hyphens:
         # assume all double spaces are mis-processed soft-hyphens.
@@ -129,9 +132,9 @@ def normalise_text(raw_text, collapse_whitespace=0,
     if collapse_whitespace == 1:
         text = ' '.join(text.split())
     elif collapse_whitespace == 2:
-        text = re.sub(r'  +', r'  ', text)
-    if collapse_digits:
-        text = re.sub(r'[0-9]', '7', text)
+        text = re.sub(r'[ \t]+', r' ', text)
+    if fix_runs:
+        text = re.sub(r'(\w)\1\1\1+', r'\1\1\1', text, flags=re.U)
     return text
 
 

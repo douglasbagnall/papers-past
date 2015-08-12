@@ -24,7 +24,7 @@ def get_metadata(tree, path):
     if el is None:
         return "<unknown>"
     return normalise_text(ET.tostring(el, method='text', encoding='utf8'),
-                          collapse_whitespace=1)
+                          collapse_whitespace=1, real_caps=True)
 
 
 def extract_body_and_header(fn):
@@ -38,8 +38,7 @@ def extract_body_and_header(fn):
         para = ET.tostring(p, method='text', encoding='utf8').strip()
         doc.append(normalise_text(para, collapse_whitespace=1))
 
-    body = normalise_text('\n\n'.join(doc), collapse_digits=True,
-                          collapse_whitespace=2)
+    body = normalise_text('\n\n'.join(doc), collapse_whitespace=2)
 
     title = get_metadata(tree, ".//{tei}name[@type='work']")
     date = get_metadata(tree, './/{tei}sourceDesc//{tei}date[@when]')
