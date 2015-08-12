@@ -35,7 +35,7 @@ def _make_char_map():
 CHAR_MAP = _make_char_map()
 NOISE_CHAR = '°'.decode('utf-8')
 
-def normalise_text(raw_text, stxetx=False, collapse_whitespace=0,
+def normalise_text(raw_text, collapse_whitespace=0,
                    collapse_digits=False, fix_soft_hyphens=False):
     m = CHAR_MAP.get
     noise = NOISE_CHAR
@@ -53,8 +53,6 @@ def normalise_text(raw_text, stxetx=False, collapse_whitespace=0,
         text = re.sub(r'  +', r'  ', text)
     if collapse_digits:
         text = re.sub(r'[0-9]', '7', text)
-    if stxetx:
-        return '␂%s␃' % text
     return text
 
 
