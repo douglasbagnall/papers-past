@@ -19,6 +19,7 @@ EXPECTED_PAGE_KEYS = [u'Articles', u'Page', u'PageUrl']
 EXPECTED_ARTICLE_KEYS = ([u'FullText', u'Section', u'Title', u'Type'],
                          [u'FullText', u'Title', u'Type'])
 
+MIN_SIZE = 10
 
 def always(x):
     return True
@@ -138,11 +139,14 @@ def count_characters(files, id_filter=always):
 
 
 def convert_files(files, fix_soft_hyphens, id_filter=always,
-                  dest=ARTICLE_DIR):
+                  dest=ARTICLE_DIR, min_size=MIN_SIZE):
     for fn in files:
         articles = parse_json(fn)
         for article in articles:
             if not id_filter(article.issue_code):
+                continue
+            c = article.content(fix_soft_hyphens=fix_soft_hyphens)
+            if len(c) < min_size:
                 continue
             s = article.sha1
             path = os.path.join(dest, s[:3], s[3:])
@@ -151,7 +155,7 @@ def convert_files(files, fix_soft_hyphens, id_filter=always,
                 os.makedirs(d)
             f = open(path, 'w')
             f.write(article.header())
-            f.write(article.content(fix_soft_hyphens=fix_soft_hyphens))
+            f.write(c)
             f.close()
 
 
