@@ -30,8 +30,8 @@ def read_file(fn):
 
 def load_and_encode_texts(directories, alphabet):
     articles = {}
-    for d in directories:
-        for fn in os.listdir(d):
+    for d in sorted(directories):
+        for fn in sorted(os.listdir(d)):
             ffn = os.path.join(d, fn)
             header, n_bytes, text = read_file(ffn)
             articles[header['id']] = alphabet.encode_text(text)

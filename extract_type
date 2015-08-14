@@ -25,8 +25,8 @@ def main():
 
     args = parser.parse_args()
 
-    for d in args.directories:
-        for fn in os.listdir(d):
+    for d in sorted(args.directories):
+        for fn in sorted(os.listdir(d)):
             ffn = os.path.join(d, fn)
             print extract_type(ffn, key=args.key,
                                delimiter=args.delimiter)

@@ -19,8 +19,8 @@ def extract_year(headers):
     return x[i: i + 4]
 
 def main():
-    for d in sys.argv[1:]:
-        for fn in os.listdir(d):
+    for d in sorted(sys.argv[1:]):
+        for fn in sorted(os.listdir(d)):
             ffn = os.path.join(d, fn)
             header, n_bytes, text = read_file(ffn)
             print extract_year(header)
