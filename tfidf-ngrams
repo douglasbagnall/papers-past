@@ -1,0 +1,82 @@
+#!/usr/bin/python
+"""Write TFIDF ngram counts"""
+import argparse
+import sys, os
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+
+def vectorise_directories(dirs, dest=sys.stdout,
+                          vector_dest=None, ngram_range=(3,6),
+                          mode='tfidf', n_features=1000,
+                          max_df=1.0):
+    filenames = []
+    contents = []
+    bytes = 0
+    for d in sorted(dirs):
+        filenames.extend(os.path.join(d, x) for x in sorted(os.listdir(d)))
+    print >> sys.stderr, "Found %d files" % len(filenames)
+    for fn in filenames:
+        f = open(fn)
+        s = f.read()
+        f.close()
+        s = s[s.index('\n\n') + 2:]
+        bytes += len(s)
+        contents.append(s)
+    print >> sys.stderr, "altogether %d bytes" % bytes
+
+    use_idf = mode == 'tfidf'
+    vectorizer = TfidfVectorizer(analyzer='char',
+                                 ngram_range=ngram_range,
+                                 stop_words=None,
+                                 max_features=n_features,
+                                 norm=('l2' if use_idf else 'l1'),
+                                 lowercase=False,
+                                 use_idf=use_idf,
+                                 decode_error='ignore',
+                                 max_df=max_df,
+                                 vocabulary=None
+                             )
+
+    vectors = vectorizer.fit_transform(contents)
+    vectors = vectors.todense()
+    for v in vectors:
+        print >> dest, ','.join([str(x) for x in v.tolist()[0]])
+
+    if vector_dest is not None:
+        for n in vectorizer.get_feature_names():
+            print >> vector_dest, n.encode('utf-8')
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('dirs', nargs='+')
+    parser.add_argument('-o', '--output', default='-',
+                        help='write to this file')
+    parser.add_argument('-v', '--vector-names', default=None,
+                        help='write vector names to this file')
+    parser.add_argument('-n', '--ngram-min', default=3, type=int,
+                        help='use ngrams at least this long')
+    parser.add_argument('-N', '--ngram-max', default=6, type=int,
+                        help='use ngrams at most this long')
+    parser.add_argument('-F', '--n-features', default=1000, type=int,
+                        help='Length of the feature vector')
+    parser.add_argument('-d', '--max-doc-frequency', default=1.0, type=float,
+                        help='Ignore features more common than this')
+    parser.add_argument('-m', '--mode', default='tfidf',
+                        help='vector contents: "tf" or "tfidf"')
+
+    args = parser.parse_args()
+    if args.output == '-':
+        dest = sys.stdout
+    else:
+        dest = open(args.output, 'w')
+    if args.vector_names:
+        vf = open(args.vector_names, 'w')
+    else:
+        vf = None
+
+    vectorise_directories(args.dirs, dest=dest, vector_dest=vf,
+                          ngram_range=(args.ngram_min,args.ngram_max),
+                          mode=args.mode, n_features=args.n_features,
+                          max_df=args.max_doc_frequency)
+
+main()
