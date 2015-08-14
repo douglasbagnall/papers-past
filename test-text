@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 import random
+import sys
 import os
 from alphabet import read_header
 import charmodel
@@ -72,7 +73,11 @@ def main():
     if not args.no_csv_header:
         print >> f, ', '.join(net.class_names)
     for k, v in articles.iteritems():
-        scores = net.test(v, args.ignore_start, True)
+        try:
+            scores = net.test(v, args.ignore_start, True)
+        except ValueError, e:
+            print >> sys.stderr, "%s: %s" % (k, e)
+
         print >> f, ', '.join('%.3f' % x for x in scores)
     f.close()
 
