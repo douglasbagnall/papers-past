@@ -1,0 +1,42 @@
+#!/usr/bin/python
+import re
+import sys
+import os
+
+def never(x):
+    return False
+
+def always(x):
+    return True
+
+def main():
+    args = sys.argv[1:]
+    patterns = []
+    while args:
+        fn, pattern = args[:2]
+        del args[:2]
+        if pattern != '-':
+            if pattern[0] == '!':
+                m2 = re.compile(pattern[1:]).search
+                def m(x):
+                    if not m2(x):
+                        return '!'
+            else:
+                m = re.compile(pattern).search
+        else:
+            m = always
+        patterns.append((open(fn), m))
+
+
+    while True:
+        for f, m in patterns:
+            line = f.next().strip()
+            if m(line):
+                print line
+                break
+            #print >>sys.stderr, "missing %s" % line
+        else:
+            print "*"
+
+
+main()
