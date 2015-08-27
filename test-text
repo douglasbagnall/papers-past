@@ -52,6 +52,8 @@ def main():
                         help="don't train on this many characters at start")
     parser.add_argument('-f', '--filename',
                         help="load net from here")
+    parser.add_argument('--csv-header-file',
+                        help="write column names here, not in csv")
     parser.add_argument('--no-csv-header',
                         help="don't start output with column names")
     parser.add_argument('-o', '--output',
@@ -70,7 +72,11 @@ def main():
     articles = load_and_encode_texts(args.directories, net.alphabet)
 
     f = open(args.output, 'w')
-    if not args.no_csv_header:
+    if args.csv_header_file:
+        f2 = open(args.csv_header_file, 'w')
+        print >> f2, ', '.join(net.class_names)
+        f2.close()
+    elif not args.no_csv_header:
         print >> f, ', '.join(net.class_names)
     for k, v in articles.iteritems():
         try:
