@@ -27,16 +27,18 @@ def main():
             m = always
         patterns.append((open(fn), m))
 
-
-    while True:
-        for f, m in patterns:
-            line = f.next().strip()
-            if m(line):
-                print line
-                break
-            #print >>sys.stderr, "missing %s" % line
-        else:
-            print "*"
-
+    try:
+        while True:
+            lines = [(f.next(), m) for f, m in patterns]
+            for line, m in lines:
+                line = line.strip()
+                if m(line):
+                    print line
+                    break
+                #print >>sys.stderr, "missing %s" % line
+            else:
+                print "*"
+    except StopIteration:
+        pass
 
 main()
