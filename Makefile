@@ -44,8 +44,8 @@ pgm-clean:
 
 .PHONY: all pgm-clean
 
-reference-corpus.md: dump-corpus-metadata books/all
-	echo '# Books used in the reference corpus' > $@
+report/reference-corpus.md: dump-corpus-metadata books/all report/appendix-header.md
+	cat report/appendix-header.md > $@
 	echo >> $@
 	./dump-corpus-metadata books/all/ >> $@
 
