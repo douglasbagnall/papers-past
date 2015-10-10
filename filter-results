@@ -1,0 +1,53 @@
+#!/usr/bin/python
+import re
+import sys
+import os
+
+def never(x):
+    return False
+
+def always(x):
+    return True
+
+def main():
+    suffix = sys.argv[1]
+    args = sys.argv[2:]
+    infiles = []
+    patterns = []
+    outfiles = []
+    while args:
+        fn, pattern = args[:2]
+        del args[:2]
+        if pattern not in '-!':
+            if pattern[0] == '!':
+                m2 = re.compile(pattern[1:]).search
+                def m(x):
+                    if not m2(x):
+                        return '!'
+            else:
+                m = re.compile(pattern).search
+        else:
+            m = always
+        patterns.append(m)
+        infiles.append(open(fn))
+        outfiles.append(open('%s-%s' % (fn, suffix), 'w'))
+
+    try:
+        n = 0
+        while True:
+            lines = [f.next().strip() for f in infiles]
+            for line, m in zip(lines, patterns):
+                if not m(line):
+                    break
+            else:
+                for line, f in zip(lines, outfiles):
+                    print >>f, line
+                n += 1
+
+            continue
+
+    except StopIteration:
+        print >> sys.stderr, "found %d lines" % n
+        sys.exit()
+
+main()
