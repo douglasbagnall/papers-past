@@ -1,0 +1,39 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+from alphabet import read_header
+import os
+import sys
+import argparse
+import math
+
+def read_file(fn):
+    f = open(fn)
+    header, n_bytes = read_header(f)
+    text = ''.join(line for line in f)
+    f.close()
+    return header, n_bytes, text
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('directories', nargs='+',
+                        help="find text in these directories")
+    parser.add_argument('-i', '--integer-log', type=float,
+                        help="report integer log of length")
+    parser.add_argument('-c', '--count-capital-markers', action='store_true',
+                        help="treat capitals as 2 characters")
+
+    args = parser.parse_args()
+
+    for d in sorted(args.directories):
+        for fn in sorted(os.listdir(d)):
+            ffn = os.path.join(d, fn)
+            header, n_bytes, text = read_file(ffn)
+            if not args.count_capital_markers:
+                text = text.replace('¹', '')
+            n = len(text)
+            if args.integer_log:
+                print int(math.log(n, args.integer_log))
+            else:
+                print n
+
+main()
