@@ -35,9 +35,18 @@ def extract_body_and_header(fn):
         for el in tree.findall(ns('.//{tei}p//{tei}%s' % tag)):
             el.clear()
 
-    for p in tree.findall(ns('.//{tei}body//{tei}p')):
+    find_text = ET.ETXPath(ns("//{tei}body//{tei}p"
+                              "|//{tei}body//{tei}head[@rend='run-in']"
+                              ))
+    prefix = ''
+    for p in find_text(tree):
         para = ET.tostring(p, method='text', encoding='utf8').strip()
-        doc.append(normalise_text(para, collapse_whitespace=1))
+        if p.get('rend') == 'run-in':
+            prefix += para.strip() + ' '
+        else:
+            doc.append(normalise_text(prefix + para, collapse_whitespace=1,
+                                      real_caps=True))
+            prefix = ''
 
     body = normalise_text('\n\n'.join(doc), collapse_whitespace=2)
 
