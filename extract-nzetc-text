@@ -28,12 +28,23 @@ def get_metadata(tree, path):
                           real_numbers=True)
 
 
-def extract_body_and_header(fn):
-    tree = ET.parse(fn)
-    doc = []
+def clean_tree(tree):
+
     for tag in ('table', 'note'):
         for el in tree.findall(ns('.//{tei}p//{tei}%s' % tag)):
             el.clear()
+
+    find_choice = ET.ETXPath(ns("//{tei}body//{tei}choice"))
+    for c in find_choice(tree):
+        # pick one choice. the last (second) one is usually the
+        # <reg> one with hyphens removed.
+        del c[:-1]
+
+
+def extract_body_and_header(fn):
+    tree = ET.parse(fn)
+    doc = []
+    clean_tree(tree)
 
     find_text = ET.ETXPath(ns("//{tei}body//{tei}p"
                               "|//{tei}body//{tei}head[@rend='run-in']"
