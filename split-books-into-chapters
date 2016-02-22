@@ -50,6 +50,9 @@ def main():
             continue
         print >> sys.stderr, "doing %s" % book
         headers, chapters = split_book(book, 5000)
+        if not chapters or len(headers) < 2:
+            print >> sys.stderr, "%s seems broken" % book
+            continue
         headers['type'] = 'chapter'
         base_id = headers['id']
         base_title = headers['title']
