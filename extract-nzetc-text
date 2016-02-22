@@ -24,7 +24,8 @@ def get_metadata(tree, path):
     if el is None:
         return "<unknown>"
     return normalise_text(ET.tostring(el, method='text', encoding='utf8'),
-                          collapse_whitespace=1, real_caps=True)
+                          collapse_whitespace=1, real_caps=True,
+                          real_numbers=True)
 
 
 def extract_body_and_header(fn):

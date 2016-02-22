@@ -116,8 +116,13 @@ NOISE_CHAR = u'°'
 
 def normalise_text(raw_text, collapse_whitespace=0,
                    fix_soft_hyphens=False, fix_runs=3,
-                   real_caps=False):
-    m = CHAR_MAP.get
+                   real_caps=False, real_numbers=False):
+    if real_numbers:
+        char_map = {k: (k if v.isdigit() else v)
+                    for k, v in CHAR_MAP.items()}
+    else:
+        char_map = CHAR_MAP
+    m = char_map.get
     noise = NOISE_CHAR
     if not isinstance(raw_text, unicode):
         raw_text = raw_text.decode('utf8')
