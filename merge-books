@@ -34,7 +34,11 @@ def merge_and_copy_books(fn, srcdir, destdir):
         headers = {}
         for c in components:
             cfn = os.path.join(srcdir, c)
-            f = open(cfn)
+            try:
+                f = open(cfn)
+            except IOError, e:
+                print >> sys.stderr, "couldn't read %s: %s" %(cfn, e)
+                continue
             c_headers, clen = read_header(f)
             for k, v in c_headers.items():
                 headers.setdefault(k, []).append(v)
